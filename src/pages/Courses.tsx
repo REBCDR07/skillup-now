@@ -1,13 +1,22 @@
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import CourseCard from "@/components/CourseCard";
-import { courses } from "@/lib/mock-data";
 import { Search } from "lucide-react";
-import { useState } from "react";
 
 const Courses = () => {
+  const [courses, setCourses] = useState<any[]>([]);
   const [search, setSearch] = useState("");
   const [levelFilter, setLevelFilter] = useState("Tous");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    supabase.from("courses").select("*").order("created_at").then(({ data }) => {
+      setCourses(data || []);
+      setLoading(false);
+    });
+  }, []);
 
   const levels = ["Tous", "Débutant", "Intermédiaire", "Avancé"];
 
@@ -26,7 +35,6 @@ const Courses = () => {
         </h1>
         <p className="mt-2 text-muted-foreground">Choisissez un cours et commencez à apprendre dès maintenant.</p>
 
-        {/* Filters */}
         <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -55,13 +63,26 @@ const Courses = () => {
           </div>
         </div>
 
-        {/* Grid */}
-        <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((course) => (
-            <CourseCard key={course.id} {...course} />
-          ))}
-        </div>
-        {filtered.length === 0 && (
+        {loading ? (
+          <div className="mt-12 text-center text-muted-foreground">Chargement...</div>
+        ) : (
+          <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {filtered.map((course) => (
+              <CourseCard
+                key={course.id}
+                id={course.slug}
+                title={course.title}
+                level={course.level}
+                description={course.description}
+                duration={course.duration || "4h"}
+                skills={course.skills || []}
+                modules={10}
+                icon={course.icon || "📚"}
+              />
+            ))}
+          </div>
+        )}
+        {!loading && filtered.length === 0 && (
           <p className="mt-12 text-center text-muted-foreground">Aucun cours trouvé.</p>
         )}
       </div>
