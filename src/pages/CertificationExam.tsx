@@ -136,6 +136,11 @@ const CertificationExam = () => {
         });
         setResult({ passed: true, score: totalScore, certificate: certData?.certificate, verificationCode: certData?.verificationCode });
         toast.success("Certification obtenue ! 🎉🏆");
+
+        // Send email notification
+        supabase.functions.invoke("send-certificate-email", {
+          body: { userId: user.id, courseId: course.id, verificationCode: certData?.verificationCode, type: "certificate" },
+        }).catch(console.error);
       } else {
         setResult({ passed: false, score: totalScore });
         toast.error(`Score insuffisant (${Math.round(totalScore)}%). Il faut ≥ 80%.`);

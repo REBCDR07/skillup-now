@@ -8,3 +8,9 @@ verify_jwt = false
 
 [functions.evaluate-answers]
 verify_jwt = false
+
+[functions.generate-pdf-certificate]
+verify_jwt = false
+
+[functions.send-certificate-email]
+verify_jwt = false
