@@ -1,24 +1,33 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { BookOpen, Trophy, User, LogIn, Menu, X, LogOut } from "lucide-react";
+import { BookOpen, Trophy, User, LogIn, Menu, X, LogOut, Sun, Moon, TrendingUp, UserCircle } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { useTheme } from "@/components/ThemeProvider";
 
 const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
+  const { theme, setTheme } = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const links = [
     { to: "/courses", label: "Cours", icon: BookOpen },
     { to: "/leaderboard", label: "Classement", icon: Trophy },
-    ...(user ? [{ to: "/dashboard", label: "Dashboard", icon: User }] : []),
+    ...(user
+      ? [
+          { to: "/dashboard", label: "Dashboard", icon: User },
+          { to: "/progress", label: "Progression", icon: TrendingUp },
+        ]
+      : []),
   ];
 
   const handleSignOut = async () => {
     await signOut();
     navigate("/");
   };
+
+  const toggleTheme = () => setTheme(theme === "dark" ? "light" : "dark");
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-background/80 backdrop-blur-xl">
@@ -47,14 +56,31 @@ const Navbar = () => {
               {link.label}
             </Link>
           ))}
+
+          <button
+            onClick={toggleTheme}
+            className="ml-1 rounded-lg p-2 text-muted-foreground hover:text-foreground transition-colors"
+            aria-label="Toggle theme"
+          >
+            {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </button>
+
           {user ? (
-            <button
-              onClick={handleSignOut}
-              className="ml-2 flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground"
-            >
-              <LogOut className="h-4 w-4" />
-              Déconnexion
-            </button>
+            <div className="ml-1 flex items-center gap-1">
+              <Link
+                to="/profile"
+                className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground"
+              >
+                <UserCircle className="h-4 w-4" />
+              </Link>
+              <button
+                onClick={handleSignOut}
+                className="flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground"
+              >
+                <LogOut className="h-4 w-4" />
+                Déconnexion
+              </button>
+            </div>
           ) : (
             <Link
               to="/auth"
@@ -66,9 +92,14 @@ const Navbar = () => {
           )}
         </div>
 
-        <button className="md:hidden text-foreground" onClick={() => setMobileOpen(!mobileOpen)}>
-          {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-        </button>
+        <div className="flex items-center gap-2 md:hidden">
+          <button onClick={toggleTheme} className="rounded-lg p-2 text-foreground">
+            {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+          </button>
+          <button className="text-foreground" onClick={() => setMobileOpen(!mobileOpen)}>
+            {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </button>
+        </div>
       </div>
 
       {mobileOpen && (
@@ -81,10 +112,16 @@ const Navbar = () => {
             </Link>
           ))}
           {user ? (
-            <button onClick={() => { handleSignOut(); setMobileOpen(false); }}
-              className="mt-2 flex w-full items-center gap-2 rounded-lg border border-border px-4 py-3 text-sm text-muted-foreground">
-              <LogOut className="h-4 w-4" /> Déconnexion
-            </button>
+            <>
+              <Link to="/profile" onClick={() => setMobileOpen(false)}
+                className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-muted-foreground hover:text-foreground">
+                <UserCircle className="h-4 w-4" /> Profil
+              </Link>
+              <button onClick={() => { handleSignOut(); setMobileOpen(false); }}
+                className="mt-2 flex w-full items-center gap-2 rounded-lg border border-border px-4 py-3 text-sm text-muted-foreground">
+                <LogOut className="h-4 w-4" /> Déconnexion
+              </button>
+            </>
           ) : (
             <Link to="/auth" onClick={() => setMobileOpen(false)}
               className="mt-2 flex items-center gap-2 rounded-lg bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground">
