@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
+import CourseIcon from "@/components/CourseIcon";
 
 interface CourseCardProps {
   id: string;
@@ -25,7 +26,7 @@ const CourseCard = ({ id, title, level, description, duration, skills, modules, 
       className="group relative flex flex-col overflow-hidden rounded-xl border border-border bg-card p-6 transition-all duration-300 hover:border-primary/40 hover:glow-emerald"
     >
       <div className="flex items-start justify-between">
-        <span className="text-4xl">{icon}</span>
+        <CourseIcon slug={id} fallbackEmoji={icon} />
         <span className={`rounded-full px-3 py-1 text-xs font-medium ${levelColor}`}>
           {level}
         </span>

@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import Navbar from "@/components/Navbar";
 import { toast } from "sonner";
+import { checkAndAwardBadges, BADGE_DEFINITIONS } from "@/lib/badges";
 
 const ModulePage = () => {
   const { courseId, moduleId } = useParams();
@@ -30,7 +31,6 @@ const ModulePage = () => {
       if (error) throw error;
       setModuleData(data.module);
 
-      // Check if already completed
       if (user) {
         const { data: courseData } = await supabase.from("courses").select("id").eq("slug", courseId).single();
         if (courseData) {
@@ -59,7 +59,6 @@ const ModulePage = () => {
       const { data: mod } = await supabase.from("modules").select("id").eq("course_id", courseData.id).eq("module_number", moduleNum).single();
       if (!mod) throw new Error("Module non trouvé");
 
-      // Upsert progress
       await supabase.from("user_module_progress").upsert({
         user_id: user.id,
         module_id: mod.id,
@@ -68,21 +67,22 @@ const ModulePage = () => {
         completed_at: new Date().toISOString(),
       }, { onConflict: "user_id,module_id" });
 
-      // Award badge + points
-      const badgeName = `${courseData.title} - Module ${moduleNum}`;
-      const { data: profile } = await supabase.from("profiles").select("badges").eq("user_id", user.id).single();
-      const currentBadges = profile?.badges || [];
-      if (!currentBadges.includes(badgeName)) {
-        await supabase.from("profiles").update({
-          badges: [...currentBadges, badgeName],
-        }).eq("user_id", user.id);
-        await supabase.rpc("increment_points", { p_user_id: user.id, p_points: 10 });
-        toast.success(`🏅 Badge obtenu : ${badgeName} (+10 pts)`);
+      // Award points
+      await supabase.rpc("increment_points", { p_user_id: user.id, p_points: 10 });
+
+      // Check and award progression badges
+      const newBadges = await checkAndAwardBadges(user.id);
+      if (newBadges.length > 0) {
+        for (const badge of newBadges) {
+          const def = BADGE_DEFINITIONS.find(b => b.name === badge);
+          toast.success(`🏅 Badge débloqué : ${def?.emoji || "🏅"} ${badge} — ${def?.description || ""}`, { duration: 5000 });
+        }
+      } else {
+        toast.success(`Module ${moduleNum} terminé ! (+10 pts) 🎉`);
       }
 
       setIsCompleted(true);
 
-      // Check if this is module 10 (last module)
       if (moduleNum === 10) {
         toast("🏆 Tous les modules terminés !", {
           description: "Vous pouvez maintenant passer l'examen de certification : 50 QCM + 10 questions ouvertes, chronométré 1h. Score minimum : 80%.",
@@ -92,8 +92,6 @@ const ModulePage = () => {
             onClick: () => navigate(`/courses/${courseId}/certification`),
           },
         });
-      } else {
-        toast.success(`Module ${moduleNum} terminé ! 🎉`);
       }
     } catch (e: any) {
       toast.error(e.message || "Erreur");
