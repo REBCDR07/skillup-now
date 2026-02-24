@@ -82,14 +82,13 @@ const CertificationExam = () => {
       if (quizzes) {
         for (const quiz of quizzes) {
           const q = quiz.questions as any;
-          if (q.qcm) allQcm = [...allQcm, ...q.qcm.slice(0, 5)]; // 5 per module
-          if (q.open) allOpen = [...allOpen, ...q.open.slice(0, 1)]; // 1 per module
+          if (q.qcm) allQcm = [...allQcm, ...q.qcm.slice(0, 5)];
+          if (q.open) allOpen = [...allOpen, ...q.open.slice(0, 1)];
         }
       }
 
       setQcmQuestions(allQcm.slice(0, 50));
       setOpenQuestions(allOpen.slice(0, 10));
-
       setTimerActive(true);
       setPhase("qcm");
     } catch (e: any) {
@@ -105,18 +104,40 @@ const CertificationExam = () => {
     resetExam();
   }, []);
 
+  // Auto-advance QCM after selecting an answer
+  const handleQcmAnswer = (optionIndex: number) => {
+    setQcmAnswers(prev => ({ ...prev, [qcmCurrent]: optionIndex }));
+    // Auto-advance after short delay
+    setTimeout(() => {
+      if (qcmCurrent < qcmQuestions.length - 1) {
+        setQcmCurrent(prev => prev + 1);
+      } else {
+        setPhase("open");
+        setOpenCurrent(0);
+      }
+    }, 400);
+  };
+
+  const canAdvanceOpen = () => {
+    const answer = (openAnswers[openCurrent] || "").trim();
+    return answer.length > 0;
+  };
+
   const handleFinish = async () => {
+    // Validate all open answers are filled
+    for (let i = 0; i < openQuestions.length; i++) {
+      if (!(openAnswers[i] || "").trim()) {
+        toast.error(`Veuillez répondre à la question ouverte ${i + 1}`);
+        setOpenCurrent(i);
+        return;
+      }
+    }
+
     if (!user) return;
     setSubmitting(true);
     try {
-      let qcmCorrect = 0;
-      qcmQuestions.forEach((q, i) => {
-        if (qcmAnswers[i] === q.correct) qcmCorrect++;
-      });
-      const qcmScore = qcmQuestions.length > 0 ? (qcmCorrect / qcmQuestions.length) * 100 : 0;
-
-      // Evaluate open questions via AI
-      const { data: evalData } = await supabase.functions.invoke("evaluate-answers", {
+      // Call evaluate-answers with questions included for certification
+      const { data: evalData, error: evalError } = await supabase.functions.invoke("evaluate-answers", {
         body: {
           answers: { qcm: qcmAnswers, open: openAnswers },
           courseId: course.id,
@@ -127,32 +148,31 @@ const CertificationExam = () => {
         },
       });
 
-      const openScore = evalData?.openScore ?? 0;
-      const openTotal = evalData?.openTotal ?? (openQuestions.length * 5);
-      const openPercent = openTotal > 0 ? (openScore / openTotal) * 100 : 0;
+      if (evalError) throw evalError;
 
-      // 70% QCM + 30% open
-      const totalScore = (qcmScore * 0.7) + (openPercent * 0.3);
+      const totalScore = evalData?.score ?? 0;
+      const qcmPercent = evalData?.qcmPercent ?? 0;
+      const openPercent = evalData?.openPercent ?? 0;
       const passed = totalScore >= 80;
 
       if (passed) {
         const { data: certData } = await supabase.functions.invoke("generate-certificate", {
           body: { userId: user.id, courseId: course.id, score: totalScore },
         });
-        setResult({ passed: true, score: totalScore, qcmScore, openPercent, certificate: certData?.certificate, verificationCode: certData?.verificationCode });
+        setResult({ passed: true, score: totalScore, qcmScore: qcmPercent, openPercent, certificate: certData?.certificate, verificationCode: certData?.verificationCode });
         toast.success("Certification obtenue ! 🎉🏆");
 
         supabase.functions.invoke("send-certificate-email", {
           body: { userId: user.id, courseId: course.id, verificationCode: certData?.verificationCode, type: "certificate" },
         }).catch(console.error);
       } else {
-        setResult({ passed: false, score: totalScore, qcmScore, openPercent });
+        setResult({ passed: false, score: totalScore, qcmScore: qcmPercent, openPercent });
         toast.error(`Score insuffisant (${Math.round(totalScore)}%). Il faut ≥ 80%.`);
       }
       setTimerActive(false);
       setPhase("result");
     } catch (e: any) {
-      toast.error(e.message || "Erreur");
+      toast.error(e.message || "Erreur lors de l'évaluation");
     } finally {
       setSubmitting(false);
     }
@@ -189,6 +209,8 @@ const CertificationExam = () => {
               <p>✍️ 10 Questions ouvertes — 1 par module (30% du score)</p>
               <p>⏱️ Durée : 1 heure maximum</p>
               <p>🏆 Score requis : ≥ 80%</p>
+              <p>⚡ Les QCM avancent automatiquement après chaque réponse</p>
+              <p>✏️ Toutes les questions ouvertes sont obligatoires</p>
               <p className="text-destructive">⚠️ Si le temps expire, l'examen est annulé et doit être repris.</p>
             </div>
             <button onClick={startExam}
@@ -274,32 +296,21 @@ const CertificationExam = () => {
             <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${((qcmCurrent + 1) / qcmQuestions.length) * 100}%` }} />
           </div>
           <div className="rounded-xl border border-border bg-card p-6">
-            <p className="mb-1 text-xs font-medium uppercase text-muted-foreground">QCM</p>
+            <p className="mb-1 text-xs font-medium uppercase text-muted-foreground">QCM — Sélectionnez une réponse</p>
             <p className="font-display text-base font-semibold text-foreground">{q.question}</p>
             <div className="mt-4 space-y-2">
               {q.options?.map((opt: string, i: number) => (
-                <button key={i} onClick={() => setQcmAnswers(prev => ({ ...prev, [qcmCurrent]: i }))}
-                  className={`flex w-full items-center gap-3 rounded-lg border p-3 text-left text-sm transition-colors ${
-                    qcmAnswers[qcmCurrent] === i ? "border-primary bg-primary/5 text-foreground" : "border-border text-muted-foreground hover:text-foreground"
+                <button key={i} onClick={() => handleQcmAnswer(i)}
+                  className={`flex w-full items-center gap-3 rounded-lg border p-3 text-left text-sm transition-all ${
+                    qcmAnswers[qcmCurrent] === i 
+                      ? "border-primary bg-primary/10 text-foreground scale-[1.01]" 
+                      : "border-border text-muted-foreground hover:text-foreground hover:border-primary/30"
                   }`}>
-                  <div className={`h-4 w-4 shrink-0 rounded-full border ${qcmAnswers[qcmCurrent] === i ? "border-primary bg-primary" : "border-muted-foreground"}`} />
+                  <div className={`h-4 w-4 shrink-0 rounded-full border-2 transition-colors ${qcmAnswers[qcmCurrent] === i ? "border-primary bg-primary" : "border-muted-foreground"}`} />
                   {opt}
                 </button>
               ))}
             </div>
-          </div>
-          <div className="mt-4 flex justify-end">
-            {qcmCurrent < qcmQuestions.length - 1 ? (
-              <button onClick={() => setQcmCurrent(qcmCurrent + 1)}
-                className="flex items-center gap-2 rounded-lg bg-primary px-6 py-2 text-sm font-semibold text-primary-foreground">
-                Suivant <ArrowRight className="h-4 w-4" />
-              </button>
-            ) : (
-              <button onClick={() => { setPhase("open"); setOpenCurrent(0); }}
-                className="flex items-center gap-2 rounded-lg bg-secondary px-6 py-2 text-sm font-semibold text-secondary-foreground">
-                Questions ouvertes <ArrowRight className="h-4 w-4" />
-              </button>
-            )}
           </div>
         </div>
       </div>
@@ -316,21 +327,26 @@ const CertificationExam = () => {
           <div className="h-full rounded-full bg-secondary transition-all" style={{ width: `${((openCurrent + 1) / openQuestions.length) * 100}%` }} />
         </div>
         <div className="rounded-xl border border-border bg-card p-6">
-          <p className="mb-1 text-xs font-medium uppercase text-muted-foreground">Question ouverte</p>
+          <p className="mb-1 text-xs font-medium uppercase text-muted-foreground">Question ouverte — Réponse obligatoire</p>
           <p className="font-display text-base font-semibold text-foreground">{oq.question}</p>
           <textarea value={openAnswers[openCurrent] || ""} onChange={e => setOpenAnswers(prev => ({ ...prev, [openCurrent]: e.target.value }))}
-            placeholder="Votre réponse..." rows={5}
+            placeholder="Votre réponse (obligatoire)..." rows={5}
             className="mt-4 w-full rounded-lg border border-border bg-background p-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none" />
+          {!(openAnswers[openCurrent] || "").trim() && (
+            <p className="mt-1 text-xs text-destructive">⚠️ Une réponse est requise pour continuer</p>
+          )}
         </div>
         <div className="mt-4 flex justify-end">
           {openCurrent < openQuestions.length - 1 ? (
-            <button onClick={() => setOpenCurrent(openCurrent + 1)}
-              className="flex items-center gap-2 rounded-lg bg-primary px-6 py-2 text-sm font-semibold text-primary-foreground">
+            <button 
+              onClick={() => canAdvanceOpen() && setOpenCurrent(openCurrent + 1)}
+              disabled={!canAdvanceOpen()}
+              className="flex items-center gap-2 rounded-lg bg-primary px-6 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50 disabled:cursor-not-allowed">
               Suivant <ArrowRight className="h-4 w-4" />
             </button>
           ) : (
-            <button onClick={handleFinish} disabled={submitting}
-              className="flex items-center gap-2 rounded-lg bg-secondary px-8 py-3 font-display text-sm font-semibold text-secondary-foreground hover:bg-secondary/90 disabled:opacity-50">
+            <button onClick={handleFinish} disabled={submitting || !canAdvanceOpen()}
+              className="flex items-center gap-2 rounded-lg bg-secondary px-8 py-3 font-display text-sm font-semibold text-secondary-foreground hover:bg-secondary/90 disabled:opacity-50 disabled:cursor-not-allowed">
               {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
               Soumettre la certification
             </button>

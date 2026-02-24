@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, Clock, BarChart3, CheckCircle2, Circle, Lock, Award } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import CourseIcon from "@/components/CourseIcon";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
@@ -40,8 +41,6 @@ const CourseDetail = () => {
   const completedModuleIds = new Set(progress.filter(p => p.completed).map(p => p.module_id));
   const completedCount = completedModuleIds.size;
   const allCompleted = completedCount >= 10;
-
-  // Generate module list (1-10, whether or not AI has generated them)
   const moduleNumbers = Array.from({ length: 10 }, (_, i) => i + 1);
 
   return (
@@ -55,7 +54,7 @@ const CourseDetail = () => {
         <div className="grid gap-8 lg:grid-cols-3">
           <div className="lg:col-span-2">
             <div className="rounded-xl border border-border bg-card p-8">
-              <span className="text-5xl">{course.icon}</span>
+              <CourseIcon slug={course.slug || courseId || ""} fallbackEmoji={course.icon} className="h-14 w-14" />
               <h1 className="mt-4 font-display text-3xl font-bold text-foreground">{course.title}</h1>
               <p className="mt-3 text-muted-foreground">{course.description}</p>
               <div className="mt-6 flex flex-wrap gap-4">
@@ -82,7 +81,6 @@ const CourseDetail = () => {
                 {moduleNumbers.map((num) => {
                   const mod = modules.find(m => m.module_number === num);
                   const isCompleted = mod && completedModuleIds.has(mod.id);
-                  const previousCompleted = num === 1 || modules.find(m => m.module_number === num - 1 && completedModuleIds.has(m.id));
                   const isUnlocked = num <= completedCount + 1 || !user;
 
                   return (
