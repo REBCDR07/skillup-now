@@ -77,10 +77,26 @@ const ModulePage = () => {
         for (const badge of newBadges) {
           const def = BADGE_DEFINITIONS.find(b => b.name === badge);
           toast.success(`🏅 Badge débloqué : ${def?.emoji || "🏅"} ${badge} — ${def?.description || ""}`, { duration: 5000 });
+          await createNotification({
+            userId: user.id,
+            type: "badge",
+            title: `Badge débloqué : ${badge}`,
+            message: def?.description || `Vous avez obtenu le badge ${badge} !`,
+            emoji: def?.emoji || "🏅",
+          });
         }
       } else {
         toast.success(`Module ${moduleNum} terminé ! (+10 pts) 🎉`);
       }
+
+      // Notification for module completion
+      await createNotification({
+        userId: user.id,
+        type: "module",
+        title: `Module ${moduleNum} terminé`,
+        message: `Vous avez terminé le module ${moduleNum} du cours. +10 points !`,
+        emoji: "✅",
+      });
 
       setIsCompleted(true);
 
