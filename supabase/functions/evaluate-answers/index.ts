@@ -62,43 +62,59 @@ serve(async (req) => {
         `Question ${i + 1}: ${q.question}\nRéponse attendue: ${q.expected_answer}\nRéponse de l'apprenant: ${openAnswersArr[i] || "(pas de réponse)"}`
       ).join("\n\n");
 
-      console.log("Grading prompt:", gradingPrompt);
+      const systemMsg = `Tu es un correcteur bienveillant. Tu dois noter ${openQuestions.length} réponses, chacune sur 5 points. Sois juste : si la réponse est globalement correcte, donne au moins 3/5. Réponds UNIQUEMENT en JSON valide, sans markdown ni backticks : {"scores": [5, 3, 4, 2]}`;
 
-      const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${GEMINI_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "google/gemini-3-flash-preview",
-          messages: [
-            { role: "system", content: `Tu es un correcteur bienveillant. Tu dois noter ${openQuestions.length} réponses, chacune sur 5 points. Sois juste : si la réponse est globalement correcte, donne au moins 3/5. Réponds UNIQUEMENT en JSON valide, sans markdown ni backticks : {"scores": [5, 3, 4, 2]}` },
-            { role: "user", content: gradingPrompt },
-          ],
-        }),
-      });
+      let aiResult: string | null = null;
 
-      console.log("AI response status:", aiResponse.status);
-
-      if (aiResponse.ok) {
-        const aiData = await aiResponse.json();
+      // Try Groq first (fastest)
+      if (!aiResult && GROQ_API_KEY) {
         try {
-          const raw = aiData.choices[0].message.content;
-          console.log("AI raw response:", raw);
-          const cleaned = raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+          const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+            method: "POST",
+            headers: { Authorization: `Bearer ${GROQ_API_KEY}`, "Content-Type": "application/json" },
+            body: JSON.stringify({ model: GROQ_MODEL, messages: [{ role: "system", content: systemMsg }, { role: "user", content: gradingPrompt }] }),
+          });
+          if (r.ok) { const d = await r.json(); aiResult = d.choices[0].message.content; }
+        } catch (e) { console.error("Groq grading failed:", e); }
+      }
+
+      // Try OpenAI
+      if (!aiResult && OPENAI_API_KEY) {
+        try {
+          const r = await fetch("https://api.openai.com/v1/chat/completions", {
+            method: "POST",
+            headers: { Authorization: `Bearer ${OPENAI_API_KEY}`, "Content-Type": "application/json" },
+            body: JSON.stringify({ model: "gpt-4o-mini", messages: [{ role: "system", content: systemMsg }, { role: "user", content: gradingPrompt }] }),
+          });
+          if (r.ok) { const d = await r.json(); aiResult = d.choices[0].message.content; }
+        } catch (e) { console.error("OpenAI grading failed:", e); }
+      }
+
+      // Try Gemini
+      if (!aiResult && GEMINI_API_KEY) {
+        try {
+          const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ contents: [{ parts: [{ text: `${systemMsg}\n\n${gradingPrompt}` }] }] }),
+          });
+          if (r.ok) { const d = await r.json(); aiResult = d.candidates?.[0]?.content?.parts?.[0]?.text || null; }
+        } catch (e) { console.error("Gemini grading failed:", e); }
+      }
+
+      if (aiResult) {
+        try {
+          const cleaned = aiResult.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
           const parsed = JSON.parse(cleaned);
           const scores = parsed.scores || [];
           openScore = scores.reduce((a: number, b: number) => a + b, 0);
           console.log("Parsed open scores:", scores, "Total:", openScore);
         } catch (e) {
           console.error("Failed to parse AI grading:", e);
-          // Fallback: give partial credit (3/5 per question) if AI fails
           openScore = openQuestions.length * 3;
         }
       } else {
-        console.error("AI grading failed:", aiResponse.status);
-        // Fallback
+        // Fallback: give partial credit
         openScore = openQuestions.length * 3;
       }
     }
