@@ -53,7 +53,7 @@ serve(async (req) => {
 
     // Grade open questions via AI
     let openScore = 0;
-    if (openQuestions.length > 0 && answers.open && LOVABLE_API_KEY) {
+    if (openQuestions.length > 0 && answers.open) {
       const openAnswersArr = Object.values(answers.open) as string[];
       const gradingPrompt = openQuestions.map((q: any, i: number) =>
         `Question ${i + 1}: ${q.question}\nRéponse attendue: ${q.expected_answer}\nRéponse de l'apprenant: ${openAnswersArr[i] || "(pas de réponse)"}`
