@@ -1,4 +1,5 @@
 export const courses = [
+  // ===== EXISTANTS =====
   { id: "html", title: "HTML & CSS", level: "Débutant", description: "Maîtrisez les fondamentaux du web avec HTML5 et CSS3. Créez des pages web modernes et responsives.", duration: "4h", skills: ["HTML5", "CSS3", "Responsive Design", "Sémantique Web"], modules: 10, icon: "🌐" },
   { id: "python", title: "Python", level: "Intermédiaire", description: "Apprenez Python de A à Z. Automatisation, data science et développement backend.", duration: "6h", skills: ["Python 3", "Algorithmes", "POO", "Data Science"], modules: 10, icon: "🐍" },
   { id: "react", title: "React.js", level: "Intermédiaire", description: "Construisez des interfaces modernes avec React. Components, hooks et state management.", duration: "5h", skills: ["React", "Hooks", "JSX", "State Management"], modules: 10, icon: "⚛️" },
@@ -15,6 +16,28 @@ export const courses = [
   { id: "figma", title: "Design UI/UX avec Figma", level: "Débutant", description: "Concevez des interfaces utilisateur modernes et des expériences mémorables.", duration: "4h", skills: ["Figma", "UI Design", "Prototypage", "UX"], modules: 10, icon: "🎨" },
   { id: "data-science", title: "Data Science & Analytics", level: "Intermédiaire", description: "Analysez les données, créez des visualisations et prenez des décisions data-driven.", duration: "6h", skills: ["Pandas", "Matplotlib", "Statistiques", "Jupyter"], modules: 10, icon: "📊" },
   { id: "blockchain", title: "Blockchain & Web3", level: "Avancé", description: "Comprenez la blockchain, les smart contracts et le développement Web3.", duration: "7h", skills: ["Blockchain", "Solidity", "Smart Contracts", "DeFi"], modules: 10, icon: "⛓️" },
+
+  // ===== NOUVEAUX COURS =====
+  { id: "java", title: "Java", level: "Intermédiaire", description: "Maîtrisez Java, le langage de prédilection pour les applications d'entreprise et Android.", duration: "8h", skills: ["Java", "POO", "Collections", "Spring Boot"], modules: 10, icon: "☕" },
+  { id: "csharp", title: "C# & .NET", level: "Intermédiaire", description: "Développez des applications Windows, web et jeux vidéo avec C# et le framework .NET.", duration: "7h", skills: ["C#", ".NET", "LINQ", "Entity Framework"], modules: 10, icon: "🟣" },
+  { id: "go", title: "Go (Golang)", level: "Intermédiaire", description: "Apprenez Go, le langage performant de Google pour les microservices et le cloud.", duration: "5h", skills: ["Go", "Goroutines", "Concurrence", "Microservices"], modules: 10, icon: "🐹" },
+  { id: "rust", title: "Rust", level: "Avancé", description: "Programmation système sécurisée avec Rust : mémoire safe, performances maximales.", duration: "8h", skills: ["Rust", "Ownership", "Concurrence", "WebAssembly"], modules: 10, icon: "🦀" },
+  { id: "php", title: "PHP & Laravel", level: "Intermédiaire", description: "Créez des applications web dynamiques avec PHP et le framework Laravel.", duration: "6h", skills: ["PHP 8", "Laravel", "Eloquent", "Blade"], modules: 10, icon: "🐘" },
+  { id: "swift", title: "Swift & iOS", level: "Intermédiaire", description: "Développez des applications iOS natives avec Swift et SwiftUI.", duration: "7h", skills: ["Swift", "SwiftUI", "UIKit", "Xcode"], modules: 10, icon: "🍎" },
+  { id: "kotlin", title: "Kotlin & Android", level: "Intermédiaire", description: "Créez des applications Android modernes avec Kotlin et Jetpack Compose.", duration: "7h", skills: ["Kotlin", "Jetpack Compose", "Android Studio", "Material 3"], modules: 10, icon: "🤖" },
+  { id: "docker", title: "Docker & Conteneurs", level: "Intermédiaire", description: "Maîtrisez la conteneurisation avec Docker. Images, volumes et orchestration.", duration: "4h", skills: ["Docker", "Docker Compose", "Volumes", "Networking"], modules: 10, icon: "🐳" },
+  { id: "kubernetes", title: "Kubernetes", level: "Avancé", description: "Orchestrez vos conteneurs à grande échelle avec Kubernetes en production.", duration: "6h", skills: ["Kubernetes", "Pods", "Services", "Helm"], modules: 10, icon: "☸️" },
+  { id: "aws", title: "AWS Cloud", level: "Avancé", description: "Déployez et gérez des infrastructures cloud avec Amazon Web Services.", duration: "8h", skills: ["EC2", "S3", "Lambda", "CloudFormation"], modules: 10, icon: "☁️" },
+  { id: "mongodb", title: "MongoDB & NoSQL", level: "Intermédiaire", description: "Maîtrisez les bases de données NoSQL avec MongoDB. Agrégations et indexation.", duration: "5h", skills: ["MongoDB", "NoSQL", "Agrégation", "Atlas"], modules: 10, icon: "🍃" },
+  { id: "graphql", title: "GraphQL", level: "Intermédiaire", description: "API modernes avec GraphQL : requêtes flexibles, mutations et subscriptions.", duration: "4h", skills: ["GraphQL", "Apollo", "Schemas", "Resolvers"], modules: 10, icon: "◆" },
+  { id: "tailwindcss", title: "Tailwind CSS", level: "Débutant", description: "Créez des interfaces élégantes et rapides avec le framework CSS utility-first.", duration: "3h", skills: ["Tailwind CSS", "Responsive", "Components", "Animations"], modules: 10, icon: "🎨" },
+  { id: "nextjs", title: "Next.js", level: "Avancé", description: "Framework React full-stack : SSR, SSG, API routes et App Router.", duration: "6h", skills: ["Next.js", "SSR", "App Router", "Server Components"], modules: 10, icon: "▲" },
+  { id: "linux", title: "Linux & Administration", level: "Intermédiaire", description: "Administrez des serveurs Linux : ligne de commande, scripts et sécurité.", duration: "5h", skills: ["Linux", "Bash", "Shell Scripts", "Administration"], modules: 10, icon: "🐧" },
+  { id: "machine-learning", title: "Machine Learning avec PyTorch", level: "Avancé", description: "Créez des modèles ML avancés avec PyTorch : CNN, RNN et Transformers.", duration: "9h", skills: ["PyTorch", "CNN", "RNN", "Transformers"], modules: 10, icon: "🔥" },
+  { id: "ruby", title: "Ruby on Rails", level: "Intermédiaire", description: "Développez des applications web rapidement avec Ruby on Rails.", duration: "5h", skills: ["Ruby", "Rails", "ActiveRecord", "MVC"], modules: 10, icon: "💎" },
+  { id: "vuejs", title: "Vue.js", level: "Intermédiaire", description: "Construisez des interfaces réactives avec Vue.js 3 et la Composition API.", duration: "5h", skills: ["Vue.js 3", "Composition API", "Pinia", "Vuetify"], modules: 10, icon: "💚" },
+  { id: "wordpress", title: "WordPress", level: "Débutant", description: "Créez des sites web professionnels sans coder avec WordPress et ses plugins.", duration: "3h", skills: ["WordPress", "Thèmes", "Plugins", "WooCommerce"], modules: 10, icon: "📝" },
+  { id: "angular", title: "Angular", level: "Intermédiaire", description: "Framework complet de Google pour des applications d'entreprise robustes.", duration: "7h", skills: ["Angular", "RxJS", "Services", "Modules"], modules: 10, icon: "🅰️" },
 ];
 
 export const leaderboard = [
