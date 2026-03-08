@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import Navbar from "@/components/Navbar";
+import { createNotification } from "@/lib/notifications";
 
 type Phase = "intro" | "qcm" | "open" | "result";
 
@@ -162,12 +163,27 @@ const CertificationExam = () => {
         setResult({ passed: true, score: totalScore, qcmScore: qcmPercent, openPercent, certificate: certData?.certificate, verificationCode: certData?.verificationCode });
         toast.success("Certification obtenue ! 🎉🏆");
 
+        await createNotification({
+          userId: user.id,
+          type: "certification",
+          title: "Certification obtenue !",
+          message: `Félicitations ! Vous avez obtenu votre certification avec un score de ${Math.round(totalScore)}%.`,
+          emoji: "🏆",
+        });
+
         supabase.functions.invoke("send-certificate-email", {
           body: { userId: user.id, courseId: course.id, verificationCode: certData?.verificationCode, type: "certificate" },
         }).catch(console.error);
       } else {
         setResult({ passed: false, score: totalScore, qcmScore: qcmPercent, openPercent });
         toast.error(`Score insuffisant (${Math.round(totalScore)}%). Il faut ≥ 80%.`);
+        await createNotification({
+          userId: user.id,
+          type: "certification",
+          title: "Examen de certification",
+          message: `Score : ${Math.round(totalScore)}%. Il faut ≥ 80% pour obtenir la certification. Réessayez !`,
+          emoji: "📋",
+        });
       }
       setTimerActive(false);
       setPhase("result");
