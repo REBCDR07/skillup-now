@@ -44,6 +44,8 @@ const App = () => (
               <Route path="/verify/:certificateId" element={<VerifyCertificate />} />
               <Route path="/progress" element={<Progress />} />
               <Route path="/profile" element={<Profile />} />
+              <Route path="/admin" element={<Admin />} />
+              <Route path="/settings" element={<Settings />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
