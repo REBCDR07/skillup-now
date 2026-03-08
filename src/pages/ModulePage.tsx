@@ -4,6 +4,8 @@ import { ArrowLeft, ArrowRight, BookOpen, Loader2, CheckCircle2, Award } from "l
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import Navbar from "@/components/Navbar";
+import CodePreview from "@/components/CodePreview";
+import ExerciseCorrection from "@/components/ExerciseCorrection";
 import { toast } from "sonner";
 import { checkAndAwardBadges, BADGE_DEFINITIONS } from "@/lib/badges";
 
@@ -67,10 +69,8 @@ const ModulePage = () => {
         completed_at: new Date().toISOString(),
       }, { onConflict: "user_id,module_id" });
 
-      // Award points
       await supabase.rpc("increment_points", { p_user_id: user.id, p_points: 10 });
 
-      // Check and award progression badges
       const newBadges = await checkAndAwardBadges(user.id);
       if (newBadges.length > 0) {
         for (const badge of newBadges) {
@@ -83,7 +83,13 @@ const ModulePage = () => {
 
       setIsCompleted(true);
 
-      if (moduleNum === 10) {
+      if (moduleNum < 10) {
+        // Auto-navigate to next module after a short delay
+        toast.info(`Passage au module ${moduleNum + 1}...`, { duration: 2000 });
+        setTimeout(() => {
+          navigate(`/courses/${courseId}/module/${moduleNum + 1}`);
+        }, 1500);
+      } else {
         toast("🏆 Tous les modules terminés !", {
           description: "Vous pouvez maintenant passer l'examen de certification : 50 QCM + 10 questions ouvertes, chronométré 1h. Score minimum : 80%.",
           duration: 10000,
@@ -105,7 +111,7 @@ const ModulePage = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="container mx-auto max-w-3xl px-4 pb-20 pt-24">
+      <div className="container mx-auto max-w-4xl px-4 pb-20 pt-24">
         <Link to={`/courses/${courseId}`} className="mb-6 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary">
           <ArrowLeft className="h-4 w-4" /> Retour au cours
         </Link>
@@ -121,46 +127,43 @@ const ModulePage = () => {
             <div className="rounded-xl border border-border bg-card p-8">
               <div className="mb-6 flex items-center gap-3">
                 <BookOpen className="h-5 w-5 text-primary" />
-                <span className="text-sm text-muted-foreground">Module {moduleNum}</span>
+                <span className="text-sm text-muted-foreground">Module {moduleNum} / 10</span>
                 {isCompleted && <CheckCircle2 className="h-5 w-5 text-primary" />}
               </div>
               <h1 className="font-display text-2xl font-bold text-foreground">{moduleData.title}</h1>
 
-              <div className="mt-8 space-y-6">
+              <div className="mt-8 space-y-8">
+                {/* Explanation - more detailed */}
                 <div>
-                  <h2 className="mb-3 font-display text-lg font-semibold text-foreground">📖 Explication</h2>
-                  <div className="whitespace-pre-wrap leading-relaxed text-muted-foreground">
-                    {content?.explanation || "Contenu en cours de génération..."}
+                  <h2 className="mb-4 font-display text-lg font-semibold text-foreground">📖 Explication</h2>
+                  <div className="prose prose-sm max-w-none text-muted-foreground">
+                    {(content?.explanation || "Contenu en cours de génération...").split("\n").map((paragraph: string, i: number) => (
+                      paragraph.trim() ? <p key={i} className="mb-3 leading-relaxed">{paragraph}</p> : null
+                    ))}
                   </div>
                 </div>
 
+                {/* Examples with code preview */}
                 {content?.examples && content.examples.length > 0 && (
                   <div>
-                    <h2 className="mb-3 font-display text-lg font-semibold text-foreground">💡 Exemples</h2>
-                    {content.examples.map((ex: any, i: number) => (
-                      <div key={i} className="mb-4">
-                        <h3 className="font-medium text-foreground">{ex.title}</h3>
-                        <p className="mt-1 text-sm text-muted-foreground">{ex.description}</p>
-                        {ex.code && (
-                          <div className="mt-2 rounded-lg bg-muted p-4">
-                            <pre className="overflow-x-auto text-sm text-foreground">{ex.code}</pre>
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                    <h2 className="mb-4 font-display text-lg font-semibold text-foreground">💡 Exemples</h2>
+                    <div className="space-y-6">
+                      {content.examples.map((ex: any, i: number) => (
+                        <div key={i} className="rounded-lg border border-border bg-background p-4">
+                          <h3 className="font-medium text-foreground">{ex.title}</h3>
+                          <p className="mt-1 text-sm text-muted-foreground">{ex.description}</p>
+                          {ex.code && <CodePreview code={ex.code} language={ex.language} />}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
 
+                {/* Exercise with correction */}
                 {content?.exercise && (
                   <div>
-                    <h2 className="mb-3 font-display text-lg font-semibold text-foreground">🏋️ Exercice pratique</h2>
-                    <div className="rounded-lg border border-border bg-background p-4">
-                      <h3 className="font-medium text-foreground">{content.exercise.title}</h3>
-                      <p className="mt-1 text-sm text-muted-foreground">{content.exercise.description}</p>
-                      {content.exercise.hint && (
-                        <p className="mt-2 text-xs text-primary">💡 Indice : {content.exercise.hint}</p>
-                      )}
-                    </div>
+                    <h2 className="mb-4 font-display text-lg font-semibold text-foreground">🏋️ Exercice pratique</h2>
+                    <ExerciseCorrection exercise={content.exercise} />
                   </div>
                 )}
               </div>

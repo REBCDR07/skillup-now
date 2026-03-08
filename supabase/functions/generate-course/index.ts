@@ -120,26 +120,38 @@ serve(async (req) => {
       });
     }
 
-    const prompt = `Tu es un expert pédagogique. Génère le contenu du module ${moduleNumber}/10 pour le cours "${course.title}" (niveau: ${course.level}).
+    const prompt = `Tu es un expert pédagogique. Génère le contenu COMPLET et DÉTAILLÉ du module ${moduleNumber}/10 pour le cours "${course.title}" (niveau: ${course.level}).
 
 Retourne UNIQUEMENT un JSON valide (pas de markdown, pas de \`\`\`) avec cette structure exacte:
 {
   "title": "Titre du module ${moduleNumber}",
-  "explanation": "Explication détaillée du concept (minimum 300 mots, avec paragraphes)",
+  "explanation": "Explication très détaillée du concept (minimum 600 mots). Utilise des paragraphes séparés par des sauts de ligne. Couvre la théorie, les cas d'usage concrets, les bonnes pratiques et les pièges courants. Sois pédagogique et progressif.",
   "examples": [
-    {"title": "Exemple 1", "code": "code exemple si applicable", "description": "Description de l'exemple"},
-    {"title": "Exemple 2", "code": "code exemple si applicable", "description": "Description de l'exemple"}
+    {"title": "Exemple 1", "code": "code complet et fonctionnel", "language": "html ou css ou javascript ou python etc.", "description": "Explication détaillée de ce que fait le code, ligne par ligne si nécessaire"},
+    {"title": "Exemple 2", "code": "code complet et fonctionnel", "language": "html ou css ou javascript ou python etc.", "description": "Explication détaillée"},
+    {"title": "Exemple 3", "code": "code complet et fonctionnel", "language": "html ou css ou javascript ou python etc.", "description": "Explication détaillée"}
   ],
-  "exercise": {"title": "Exercice pratique", "description": "Description de l'exercice", "hint": "Indice"},
+  "exercise": {
+    "title": "Exercice pratique",
+    "description": "Description détaillée de l'exercice avec les consignes claires",
+    "hint": "Indice pour guider l'apprenant",
+    "correction": "Explication détaillée de la solution, étape par étape",
+    "correction_code": "Code complet de la solution corrigée"
+  },
   "qcm_questions": [
-    {"question": "Question ?", "options": ["A", "B", "C", "D"], "correct": 0, "explanation": "Explication"}
+    {"question": "Question ?", "options": ["A", "B", "C", "D"], "correct": 0, "explanation": "Explication de la bonne réponse"}
   ],
   "open_questions": [
-    {"question": "Question ouverte ?", "expected_answer": "Réponse attendue"}
+    {"question": "Question ouverte ?", "expected_answer": "Réponse attendue détaillée"}
   ]
 }
 
-Génère exactement 20 questions QCM et 4 questions ouvertes. Le contenu doit être en français, pédagogique et adapté au niveau ${course.level}.`;
+IMPORTANT: 
+- Génère exactement 20 questions QCM et 4 questions ouvertes.
+- Les exemples doivent contenir du code COMPLET et fonctionnel avec le champ "language" renseigné.
+- L'exercice DOIT inclure "correction" et "correction_code" avec la solution complète.
+- Le contenu doit être en français, pédagogique et adapté au niveau ${course.level}.
+- L'explication doit être très développée (600+ mots).`;
 
     const systemPrompt = "Tu es un générateur de contenu pédagogique. Tu réponds UNIQUEMENT en JSON valide, sans markdown.";
 
