@@ -93,8 +93,25 @@ const Quiz = () => {
       if (error) throw error;
       setResult(data);
       setSubmitted(true);
-      if (data.passed) toast.success("Module validé ! 🎉");
-      else toast.error("Score insuffisant. Réessayez !");
+      if (data.passed) {
+        toast.success("Module validé ! 🎉");
+        await createNotification({
+          userId: user.id,
+          type: "quiz",
+          title: "Quiz réussi !",
+          message: `Vous avez obtenu ${Math.round(data.score)}% au quiz du module ${moduleNum}.`,
+          emoji: "✅",
+        });
+      } else {
+        toast.error("Score insuffisant. Réessayez !");
+        await createNotification({
+          userId: user.id,
+          type: "quiz",
+          title: "Quiz terminé",
+          message: `Score : ${Math.round(data.score)}% au module ${moduleNum}. Courage, réessayez !`,
+          emoji: "📝",
+        });
+      }
     } catch (e: any) {
       toast.error(e.message || "Erreur d'évaluation");
     } finally {
