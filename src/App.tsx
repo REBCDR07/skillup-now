@@ -17,6 +17,8 @@ import Leaderboard from "./pages/Leaderboard";
 import VerifyCertificate from "./pages/VerifyCertificate";
 import Progress from "./pages/Progress";
 import Profile from "./pages/Profile";
+import Admin from "./pages/Admin";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
