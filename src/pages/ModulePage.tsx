@@ -8,6 +8,7 @@ import CodePreview from "@/components/CodePreview";
 import ExerciseCorrection from "@/components/ExerciseCorrection";
 import { toast } from "sonner";
 import { checkAndAwardBadges, BADGE_DEFINITIONS } from "@/lib/badges";
+import { createNotification } from "@/lib/notifications";
 
 const ModulePage = () => {
   const { courseId, moduleId } = useParams();
