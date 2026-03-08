@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import Navbar from "@/components/Navbar";
+import { createNotification } from "@/lib/notifications";
 
 type Phase = "intro" | "qcm" | "open" | "result";
 
