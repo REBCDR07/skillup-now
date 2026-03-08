@@ -158,50 +158,54 @@ IMPORTANT:
     const raw = await callAI(prompt, systemPrompt);
     
     let content;
-    // Robust JSON extraction: sanitize control chars inside string values
-    function sanitizeJsonString(str: string): string {
-      // Remove markdown fences
-      let s = str.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-      // Replace literal control characters that are invalid in JSON strings
-      // We need to handle newlines inside string values by replacing them with \\n
-      // Strategy: replace all real newlines/tabs with escaped versions, 
-      // then restore structural ones (between JSON tokens)
-      s = s.replace(/\r\n/g, '\n');
-      // Remove all control chars except \n (we'll handle \n specially)
-      s = s.replace(/[\x00-\x09\x0B\x0C\x0E-\x1F]/g, ' ');
-      return s;
+    // Fix unescaped newlines/control chars inside JSON string values
+    function fixJsonStrings(str: string): string {
+      let result = '';
+      let inString = false;
+      let escape = false;
+      for (let i = 0; i < str.length; i++) {
+        const ch = str[i];
+        if (escape) {
+          result += ch;
+          escape = false;
+          continue;
+        }
+        if (ch === '\\' && inString) {
+          result += ch;
+          escape = true;
+          continue;
+        }
+        if (ch === '"') {
+          inString = !inString;
+          result += ch;
+          continue;
+        }
+        if (inString) {
+          if (ch === '\n') { result += '\\n'; continue; }
+          if (ch === '\r') { result += '\\r'; continue; }
+          if (ch === '\t') { result += '\\t'; continue; }
+          const code = ch.charCodeAt(0);
+          if (code < 0x20) { result += ' '; continue; }
+        }
+        result += ch;
+      }
+      return result;
     }
     
     try {
-      const cleaned = sanitizeJsonString(raw);
+      let cleaned = raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      cleaned = fixJsonStrings(cleaned);
       content = JSON.parse(cleaned);
     } catch (e) {
-      console.error("First parse failed:", (e as Error).message);
-      // More aggressive: try to fix unescaped newlines inside JSON string values
+      console.error("Parse failed:", (e as Error).message);
       try {
-        let cleaned = sanitizeJsonString(raw);
-        // Replace newlines that appear inside JSON string values (not structural ones)
-        // Match content between quotes and escape newlines within
-        cleaned = cleaned.replace(/"((?:[^"\\]|\\.)*)"/g, (match) => {
-          return match.replace(/\n/g, '\\n');
-        });
-        content = JSON.parse(cleaned);
+        const jsonMatch = raw.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) throw new Error("No JSON found");
+        const fixed = fixJsonStrings(jsonMatch[0]);
+        content = JSON.parse(fixed);
       } catch (e2) {
-        console.error("Second parse failed:", (e2 as Error).message);
-        // Last resort: extract JSON object and try
-        try {
-          const jsonMatch = raw.match(/\{[\s\S]*\}/);
-          if (!jsonMatch) throw new Error("No JSON found in response");
-          let extracted = jsonMatch[0];
-          extracted = extracted.replace(/[\x00-\x09\x0B\x0C\x0E-\x1F]/g, ' ');
-          extracted = extracted.replace(/"((?:[^"\\]|\\.)*)"/g, (match) => {
-            return match.replace(/\n/g, '\\n');
-          });
-          content = JSON.parse(extracted);
-        } catch (e3) {
-          console.error("All parse attempts failed. Raw (first 800):", raw.substring(0, 800));
-          throw new Error("Failed to parse AI content");
-        }
+        console.error("All parse attempts failed. Raw (first 500):", raw.substring(0, 500));
+        throw new Error("Failed to parse AI content");
       }
     }
 
