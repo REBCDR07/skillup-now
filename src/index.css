@@ -57,8 +57,8 @@
     --gradient-emerald: linear-gradient(135deg, hsl(145 60% 36%), hsl(155 70% 30%));
     --shadow-glow: 0 0 40px hsl(145 60% 36% / 0.15);
     --shadow-gold: 0 0 30px hsl(45 85% 50% / 0.1);
-    --font-sans: Montserrat, ui-sans-serif, system-ui, sans-serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji;
-    --font-serif: "Playfair Display", ui-serif, Georgia, Cambria, Times New Roman, Times, serif;
+    --font-sans: 'Oswald', ui-sans-serif, system-ui, sans-serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji;
+    --font-serif: 'Unbounded', ui-serif, Georgia, Cambria, Times New Roman, Times, serif;
     --font-mono: "Roboto Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace;
     --shadow-sm: 0px 1px 1.5px 0px hsla(215, 19%, 35%, 0.1);
     --shadow: 0px 1px 3px 0px hsla(215, 19%, 35%, 0.1);
