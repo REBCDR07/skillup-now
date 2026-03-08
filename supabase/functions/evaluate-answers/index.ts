@@ -12,7 +12,10 @@ serve(async (req) => {
   try {
     const body = await req.json();
     const { answers, quizId, moduleId, courseId, userId, quizType, qcmQuestions: clientQcm, openQuestions: clientOpen } = body;
+    const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
     const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+    const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY");
+    const GROQ_MODEL = Deno.env.get("GROQ_MODEL") || "llama-3.3-70b-versatile";
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
