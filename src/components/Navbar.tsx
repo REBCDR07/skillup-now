@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/components/ThemeProvider";
 import SearchDialog from "@/components/SearchDialog";
+import NotificationBell from "@/components/NotificationBell";
 
 const Navbar = () => {
   const location = useLocation();
@@ -91,6 +92,7 @@ const Navbar = () => {
 
             {user ? (
               <div className="ml-1 flex items-center gap-1">
+                <NotificationBell />
                 <Link
                   to="/settings"
                   className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground"
