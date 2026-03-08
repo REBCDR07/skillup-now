@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { BookOpen, Trophy, User, LogIn, Menu, X, LogOut, Sun, Moon, TrendingUp, UserCircle, Search } from "lucide-react";
+import { BookOpen, Trophy, User, LogIn, Menu, X, LogOut, Sun, Moon, TrendingUp, UserCircle, Search, Settings } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/components/ThemeProvider";
