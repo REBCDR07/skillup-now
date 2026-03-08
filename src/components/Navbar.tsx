@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/components/ThemeProvider";
 import SearchDialog from "@/components/SearchDialog";
+import NotificationBell from "@/components/NotificationBell";
 
 const Navbar = () => {
   const location = useLocation();
