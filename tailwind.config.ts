@@ -15,15 +15,15 @@ export default {
   	extend: {
   		fontFamily: {
   			display: [
-  				'Space Grotesk',
+  				'Unbounded',
   				'sans-serif'
   			],
   			body: [
-  				'Inter',
+  				'Oswald',
   				'sans-serif'
   			],
   			sans: [
-  				'Montserrat',
+  				'Oswald',
   				'ui-sans-serif',
   				'system-ui',
   				'sans-serif',
@@ -33,7 +33,7 @@ export default {
   				'Noto Color Emoji'
   			],
   			serif: [
-  				'Playfair Display',
+  				'Unbounded',
   				'ui-serif',
   				'Georgia',
   				'Cambria',
