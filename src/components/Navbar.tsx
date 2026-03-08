@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { BookOpen, Trophy, User, LogIn, Menu, X, LogOut, Sun, Moon, TrendingUp, UserCircle, Search } from "lucide-react";
+import { BookOpen, Trophy, User, LogIn, Menu, X, LogOut, Sun, Moon, TrendingUp, UserCircle, Search, Settings } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/components/ThemeProvider";
@@ -91,6 +91,13 @@ const Navbar = () => {
 
             {user ? (
               <div className="ml-1 flex items-center gap-1">
+                <Link
+                  to="/settings"
+                  className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground"
+                  title="Paramètres"
+                >
+                  <Settings className="h-4 w-4" />
+                </Link>
                 <Link
                   to="/profile"
                   className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground"

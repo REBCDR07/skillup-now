@@ -60,20 +60,35 @@ async function callAI(prompt: string, systemPrompt: string): Promise<string> {
     console.error("Gemini failed:", response.status);
   }
 
- 
+  // Try Groq
+  const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY");
+  const GROQ_MODEL = Deno.env.get("GROQ_MODEL") || "llama-3.3-70b-versatile";
+  if (GROQ_API_KEY && GROQ_API_KEY.trim()) {
+    console.log("Using Groq API with model:", GROQ_MODEL);
+    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${GROQ_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: GROQ_MODEL,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: prompt },
+        ],
+        temperature: 0.7,
+      }),
+    });
 
-    if (!response.ok) {
-      const status = response.status;
-      if (status === 429) throw new Error("Trop de requêtes. Réessayez dans un moment.");
-      if (status === 402) throw new Error("Crédits IA insuffisants.");
-      throw new Error(`AI gateway error: ${status}`);
+    if (response.ok) {
+      const data = await response.json();
+      return data.choices[0].message.content;
     }
-
-    const data = await response.json();
-    return data.choices[0].message.content;
+    console.error("Groq failed:", response.status);
   }
 
-  throw new Error("Aucune clé API IA configurée");
+  throw new Error("Aucune clé API IA configurée. Configurez OpenAI, Gemini ou Groq dans les paramètres.");
 }
 
 serve(async (req) => {
