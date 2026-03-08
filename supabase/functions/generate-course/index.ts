@@ -158,28 +158,50 @@ IMPORTANT:
     const raw = await callAI(prompt, systemPrompt);
     
     let content;
+    // Robust JSON extraction: sanitize control chars inside string values
+    function sanitizeJsonString(str: string): string {
+      // Remove markdown fences
+      let s = str.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      // Replace literal control characters that are invalid in JSON strings
+      // We need to handle newlines inside string values by replacing them with \\n
+      // Strategy: replace all real newlines/tabs with escaped versions, 
+      // then restore structural ones (between JSON tokens)
+      s = s.replace(/\r\n/g, '\n');
+      // Remove all control chars except \n (we'll handle \n specially)
+      s = s.replace(/[\x00-\x09\x0B\x0C\x0E-\x1F]/g, ' ');
+      return s;
+    }
+    
     try {
-      let cleaned = raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-      // Remove control characters that break JSON.parse (except valid whitespace)
-      cleaned = cleaned.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '');
-      // Fix unescaped newlines/tabs inside JSON string values
-      cleaned = cleaned.replace(/\t/g, '\\t');
+      const cleaned = sanitizeJsonString(raw);
       content = JSON.parse(cleaned);
     } catch (e) {
-      console.error("Failed to parse AI response:", e);
-      console.error("Raw response (first 500 chars):", raw.substring(0, 500));
-      // Try extracting JSON from the response
+      console.error("First parse failed:", (e as Error).message);
+      // More aggressive: try to fix unescaped newlines inside JSON string values
       try {
-        const jsonMatch = raw.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          let extracted = jsonMatch[0].replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '').replace(/\t/g, '\\t');
-          content = JSON.parse(extracted);
-        } else {
-          throw new Error("No JSON found");
-        }
+        let cleaned = sanitizeJsonString(raw);
+        // Replace newlines that appear inside JSON string values (not structural ones)
+        // Match content between quotes and escape newlines within
+        cleaned = cleaned.replace(/"((?:[^"\\]|\\.)*)"/g, (match) => {
+          return match.replace(/\n/g, '\\n');
+        });
+        content = JSON.parse(cleaned);
       } catch (e2) {
-        console.error("Second parse attempt failed:", e2);
-        throw new Error("Failed to parse AI content");
+        console.error("Second parse failed:", (e2 as Error).message);
+        // Last resort: extract JSON object and try
+        try {
+          const jsonMatch = raw.match(/\{[\s\S]*\}/);
+          if (!jsonMatch) throw new Error("No JSON found in response");
+          let extracted = jsonMatch[0];
+          extracted = extracted.replace(/[\x00-\x09\x0B\x0C\x0E-\x1F]/g, ' ');
+          extracted = extracted.replace(/"((?:[^"\\]|\\.)*)"/g, (match) => {
+            return match.replace(/\n/g, '\\n');
+          });
+          content = JSON.parse(extracted);
+        } catch (e3) {
+          console.error("All parse attempts failed. Raw (first 800):", raw.substring(0, 800));
+          throw new Error("Failed to parse AI content");
+        }
       }
     }
 
