@@ -159,11 +159,28 @@ IMPORTANT:
     
     let content;
     try {
-      const cleaned = raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      let cleaned = raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      // Remove control characters that break JSON.parse (except valid whitespace)
+      cleaned = cleaned.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '');
+      // Fix unescaped newlines/tabs inside JSON string values
+      cleaned = cleaned.replace(/\t/g, '\\t');
       content = JSON.parse(cleaned);
     } catch (e) {
       console.error("Failed to parse AI response:", e);
-      throw new Error("Failed to parse AI content");
+      console.error("Raw response (first 500 chars):", raw.substring(0, 500));
+      // Try extracting JSON from the response
+      try {
+        const jsonMatch = raw.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          let extracted = jsonMatch[0].replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '').replace(/\t/g, '\\t');
+          content = JSON.parse(extracted);
+        } else {
+          throw new Error("No JSON found");
+        }
+      } catch (e2) {
+        console.error("Second parse attempt failed:", e2);
+        throw new Error("Failed to parse AI content");
+      }
     }
 
     const moduleData = {
