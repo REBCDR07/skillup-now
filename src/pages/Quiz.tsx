@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import Navbar from "@/components/Navbar";
+import { createNotification } from "@/lib/notifications";
 
 const Quiz = () => {
   const { courseId, moduleId } = useParams();
