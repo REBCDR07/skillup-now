@@ -28,6 +28,7 @@ async function callAI(prompt: string, systemPrompt: string): Promise<string> {
           { role: "user", content: prompt },
         ],
         temperature: 0.7,
+        response_format: { type: "json_object" },
       }),
     });
 
@@ -78,6 +79,7 @@ async function callAI(prompt: string, systemPrompt: string): Promise<string> {
           { role: "user", content: prompt },
         ],
         temperature: 0.7,
+        response_format: { type: "json_object" },
       }),
     });
 
@@ -86,6 +88,33 @@ async function callAI(prompt: string, systemPrompt: string): Promise<string> {
       return data.choices[0].message.content;
     }
     console.error("Groq failed:", response.status);
+  }
+
+  // Fallback: Lovable AI Gateway
+  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+  if (LOVABLE_API_KEY && LOVABLE_API_KEY.trim()) {
+    console.log("Using Lovable AI Gateway as fallback");
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: prompt },
+        ],
+        temperature: 0.7,
+      }),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      return data.choices[0].message.content;
+    }
+    console.error("Lovable AI failed:", response.status);
   }
 
   throw new Error("Aucune clé API IA configurée. Configurez OpenAI, Gemini ou Groq dans les paramètres.");
@@ -158,27 +187,53 @@ IMPORTANT:
     const raw = await callAI(prompt, systemPrompt);
     
     let content;
+    // Fix unescaped newlines/control chars inside JSON string values
+    function fixJsonStrings(str: string): string {
+      let result = '';
+      let inString = false;
+      let escape = false;
+      for (let i = 0; i < str.length; i++) {
+        const ch = str[i];
+        if (escape) {
+          result += ch;
+          escape = false;
+          continue;
+        }
+        if (ch === '\\' && inString) {
+          result += ch;
+          escape = true;
+          continue;
+        }
+        if (ch === '"') {
+          inString = !inString;
+          result += ch;
+          continue;
+        }
+        if (inString) {
+          if (ch === '\n') { result += '\\n'; continue; }
+          if (ch === '\r') { result += '\\r'; continue; }
+          if (ch === '\t') { result += '\\t'; continue; }
+          const code = ch.charCodeAt(0);
+          if (code < 0x20) { result += ' '; continue; }
+        }
+        result += ch;
+      }
+      return result;
+    }
+    
     try {
       let cleaned = raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-      // Remove control characters that break JSON.parse (except valid whitespace)
-      cleaned = cleaned.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '');
-      // Fix unescaped newlines/tabs inside JSON string values
-      cleaned = cleaned.replace(/\t/g, '\\t');
+      cleaned = fixJsonStrings(cleaned);
       content = JSON.parse(cleaned);
     } catch (e) {
-      console.error("Failed to parse AI response:", e);
-      console.error("Raw response (first 500 chars):", raw.substring(0, 500));
-      // Try extracting JSON from the response
+      console.error("Parse failed:", (e as Error).message);
       try {
         const jsonMatch = raw.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          let extracted = jsonMatch[0].replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '').replace(/\t/g, '\\t');
-          content = JSON.parse(extracted);
-        } else {
-          throw new Error("No JSON found");
-        }
+        if (!jsonMatch) throw new Error("No JSON found");
+        const fixed = fixJsonStrings(jsonMatch[0]);
+        content = JSON.parse(fixed);
       } catch (e2) {
-        console.error("Second parse attempt failed:", e2);
+        console.error("All parse attempts failed. Raw (first 500):", raw.substring(0, 500));
         throw new Error("Failed to parse AI content");
       }
     }
